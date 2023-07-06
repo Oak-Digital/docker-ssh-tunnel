@@ -1,0 +1,66 @@
+name: Publish Docker Image
+
+on:
+    push:
+        tags:
+            - 'release-*'
+            - 'v*'
+        branches:
+            - staging
+
+jobs:
+    find-environment:
+        name: Find environment
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check branch
+              id: branch_check
+              run: |
+                  echo "Running on ref name: ${{ github.ref }}"
+                  if [[ "${{ github.ref }}" =~ ^refs\/tags\/release* ]]; then
+                    echo "env_name=Production" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+                    echo "env_name=Staging" >> $GITHUB_OUTPUT
+                  else
+                     echo "env_name=Test" >> $GITHUB_OUTPUT
+                  fi
+                  cat $GITHUB_OUTPUT
+            - name: Use variable setup in previous step
+              run: echo "I'm using variable ${{ steps.branch_check.outputs.env_name }}"
+
+        outputs:
+            env_name: ${{ steps.branch_check.outputs.env_name }}
+
+    build:
+        name: Build and Publish to Registry
+        runs-on: ubuntu-latest
+        environment:
+            name: ${{ needs.find-environment.outputs.env_name }}
+        needs:
+            - find-environment
+
+        steps:
+            # Checkout since we need .rsinclude and .gitignore
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Log in to Docker
+              uses: docker/login-action@v2
+              with:
+                  registry: ${{ vars.REGISTRY }}
+                  username: ${{ secrets.REGISTRY_USERNAME }}
+                  password: ${{ secrets.REGISTRY_PASSWORD }}
+
+            - name: Extract metadata
+              id: meta
+              uses: docker/metadata-action@v4
+              with:
+                  images: ${{ vars.REGISTRY }}/${{ vars.REGISTRY_PROJECT }}/${{ vars.IMAGE_NAME }}-${{ needs.find-environment.outputs.env_name }}
+
+            - name: Build and Publish image
+              uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+              with:
+                  context: .
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.label }}
