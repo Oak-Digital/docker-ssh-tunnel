@@ -27,7 +27,7 @@ jobs:
               id: meta
               uses: docker/metadata-action@v4
               with:
-                  images: ${{ vars.REGISTRY }}/${{ vars.REGISTRY_PROJECT }}/${{ vars.IMAGE_NAME }}-${{ needs.find-environment.outputs.env_name }}
+                  images: ${{ vars.REGISTRY }}/${{ vars.REGISTRY_PROJECT }}/${{ vars.IMAGE_NAME }}
 
             - name: Build and Publish image
               uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
