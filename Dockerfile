@@ -9,6 +9,7 @@ ENV REMOTE_USER=root
 ENV REMOTE_TARGET_PORT=3306
 
 RUN apk add --no-cache openssh
+RUN apk add --no-cache sshpass
 
 RUN mkdir /var/.ssh
 RUN touch /var/.ssh/known_hosts
