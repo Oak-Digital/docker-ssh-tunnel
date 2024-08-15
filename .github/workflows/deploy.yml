@@ -5,39 +5,11 @@ on:
         tags:
             - 'release-*'
             - 'v*'
-        branches:
-            - staging
 
 jobs:
-    find-environment:
-        name: Find environment
-        runs-on: ubuntu-latest
-        steps:
-            - name: Check branch
-              id: branch_check
-              run: |
-                  echo "Running on ref name: ${{ github.ref }}"
-                  if [[ "${{ github.ref }}" =~ ^refs\/tags\/release* ]]; then
-                    echo "env_name=Production" >> $GITHUB_OUTPUT
-                  elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
-                    echo "env_name=Staging" >> $GITHUB_OUTPUT
-                  else
-                     echo "env_name=Test" >> $GITHUB_OUTPUT
-                  fi
-                  cat $GITHUB_OUTPUT
-            - name: Use variable setup in previous step
-              run: echo "I'm using variable ${{ steps.branch_check.outputs.env_name }}"
-
-        outputs:
-            env_name: ${{ steps.branch_check.outputs.env_name }}
-
     build:
         name: Build and Publish to Registry
         runs-on: ubuntu-latest
-        environment:
-            name: ${{ needs.find-environment.outputs.env_name }}
-        needs:
-            - find-environment
 
         steps:
             # Checkout since we need .rsinclude and .gitignore
